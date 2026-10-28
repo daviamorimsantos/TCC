@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistema de Monitoramento Industrial Preditivo. Protótipo com ESP32, ESP-NOW, DS18B20, MPU-6050 e ESP32 CYD.">
+  <title>Monitoramento Industrial Preditivo | TCC Eletrônica</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#071018; --panel:#0c1721; --panel2:#101f2b; --line:#1c3342;
+      --text:#edf7fb; --muted:#91a7b5; --cyan:#35d6ff; --cyan2:#0aa6d8;
+      --green:#56e39f; --orange:#ffb45c; --danger:#ff687d;
+      --max:1180px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 75% 5%,rgba(53,214,255,.12),transparent 28%),var(--bg);color:var(--text);line-height:1.6}
+    a{color:inherit;text-decoration:none}
+    .wrap{width:min(var(--max),calc(100% - 40px));margin:auto}
+    header{position:fixed;top:0;left:0;right:0;z-index:10;background:rgba(7,16,24,.78);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.06)}
+    nav{height:76px;display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;gap:12px;align-items:center;font-weight:800;letter-spacing:-.02em}
+    .brand-mark{width:38px;height:38px;border:1px solid rgba(53,214,255,.5);border-radius:12px;display:grid;place-items:center;background:rgba(53,214,255,.08);color:var(--cyan)}
+    .brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+    .links{display:flex;gap:26px;color:#b8cbd5;font-size:14px}
+    .links a:hover{color:var(--cyan)}
+    .menu{display:none;background:none;border:0;color:white;font-size:25px}
+    .hero{min-height:100vh;display:grid;place-items:center;padding:130px 0 70px;overflow:hidden}
+    .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:70px;align-items:center}
+    .eyebrow{color:var(--cyan);font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;margin-bottom:18px}
+    h1{font-family:"Space Grotesk",sans-serif;font-size:clamp(44px,6.4vw,82px);line-height:.98;letter-spacing:-.055em;max-width:800px}
+    .gradient{background:linear-gradient(100deg,#fff 15%,#91eaff 60%,#35d6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .hero p{margin:25px 0 30px;color:var(--muted);font-size:18px;max-width:670px}
+    .buttons{display:flex;gap:12px;flex-wrap:wrap}
+    .btn{padding:13px 18px;border-radius:12px;border:1px solid var(--line);font-weight:700;font-size:14px;transition:.2s}
+    .btn.primary{background:var(--cyan);color:#031018;border-color:var(--cyan)}
+    .btn:hover{transform:translateY(-2px)}
+    .visual{position:relative}
+    .device{border:1px solid #234253;background:linear-gradient(145deg,#11222e,#08131b);border-radius:28px;padding:20px;box-shadow:0 30px 90px rgba(0,0,0,.35)}
+    .screen{aspect-ratio:1.25;border-radius:18px;border:1px solid #284b5e;background:#07141b;padding:22px;overflow:hidden}
+    .screen-top{display:flex;justify-content:space-between;color:#7893a1;font-size:11px}
+    .live{color:var(--green);font-weight:800}
+    .metric{margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .metric-card{padding:17px;border:1px solid #17313f;border-radius:14px;background:#0b1b24}
+    .metric-card span{display:block;color:#7893a1;font-size:10px;text-transform:uppercase;letter-spacing:.1em}
+    .metric-card strong{display:block;font-family:"Space Grotesk";font-size:29px;margin-top:4px}
+    .chart{height:95px;margin-top:13px;position:relative;overflow:hidden}
+    .chart svg{width:100%;height:100%}
+    .float{position:absolute;padding:10px 13px;border:1px solid #234253;background:#0d1c26;border-radius:12px;font-size:11px;box-shadow:0 15px 35px rgba(0,0,0,.3)}
+    .f1{right:-28px;top:12%}.f2{left:-35px;bottom:12%}
+    section{padding:105px 0;border-top:1px solid rgba(255,255,255,.05)}
+    .section-head{max-width:720px;margin-bottom:42px}
+    .section-number{font-size:11px;color:var(--cyan);font-weight:800;letter-spacing:.15em}
+    h2{font-family:"Space Grotesk";font-size:clamp(32px,4vw,53px);line-height:1.05;letter-spacing:-.04em;margin:9px 0 15px}
+    .lead{color:var(--muted);font-size:17px}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .card{background:linear-gradient(145deg,rgba(16,31,43,.9),rgba(8,19,27,.9));border:1px solid var(--line);border-radius:18px;padding:25px}
+    .icon{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:rgba(53,214,255,.09);border:1px solid rgba(53,214,255,.18);color:var(--cyan);font-weight:800;margin-bottom:20px}
+    .card h3{font-size:19px;margin-bottom:8px}.card p{color:var(--muted);font-size:14px}
+    .architecture{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:stretch}
+    .node{padding:24px 17px;border:1px solid var(--line);border-radius:17px;background:#0b1821;text-align:center;position:relative}
+    .node:not(:last-child)::after{content:"→";position:absolute;right:-17px;top:50%;transform:translateY(-50%);color:var(--cyan);z-index:2}
+    .node b{display:block;margin-bottom:6px}.node span{font-size:12px;color:var(--muted)}
+    .spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .spec{display:flex;justify-content:space-between;gap:20px;padding:19px 0;border-bottom:1px solid var(--line)}
+    .spec span{color:var(--muted)} .spec b{text-align:right}
+    .interface{display:grid;grid-template-columns:.8fr 1.2fr;gap:18px}
+    .panel{border:1px solid var(--line);background:#0b1821;border-radius:20px;padding:24px}
+    .screen-demo{background:#061117;border:1px solid #234253;border-radius:16px;padding:20px}
+    .screen-demo h3{font-size:13px;color:var(--cyan);margin-bottom:15px}
+    .bar{height:8px;background:#16313e;border-radius:99px;margin:10px 0 18px;overflow:hidden}
+    .bar i{display:block;width:72%;height:100%;background:var(--cyan)}
+    .history{display:grid;gap:8px}.history div{display:flex;justify-content:space-between;padding:9px 10px;background:#0b1e27;border-radius:9px;font-size:12px}
+    .history span{color:var(--muted)}
+    .warning{border:1px solid rgba(255,104,125,.3);background:rgba(255,104,125,.05);border-radius:18px;padding:24px;margin-top:18px}
+    .warning b{color:#ff8a9a}.warning p{color:var(--muted);font-size:14px;margin-top:5px}
+    .team{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .person{padding:22px;border:1px solid var(--line);border-radius:15px;background:#0b1821}
+    .person strong{display:block}.person span{color:var(--muted);font-size:12px}
+    .cta{padding:70px 0}
+    .cta-box{border:1px solid rgba(53,214,255,.25);background:radial-gradient(circle at 85% 20%,rgba(53,214,255,.15),transparent 32%),#0b1821;border-radius:26px;padding:55px;text-align:center}
+    .cta-box p{color:var(--muted);max-width:650px;margin:12px auto 25px}
+    footer{padding:35px 0;border-top:1px solid rgba(255,255,255,.06);color:#6f8794;font-size:12px}
+    footer .foot{display:flex;justify-content:space-between;gap:20px}
+    @media(max-width:850px){
+      .links{display:none}.menu{display:block}.hero-grid,.interface,.spec-grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.architecture{grid-template-columns:1fr 1fr}.node:not(:last-child)::after{display:none}.team{grid-template-columns:1fr 1fr}.f1{right:0}.f2{left:0}
+    }
+    @media(max-width:560px){
+      .wrap{width:min(100% - 26px,var(--max))}.hero{padding-top:115px}.cards,.architecture,.team{grid-template-columns:1fr}section{padding:75px 0}.cta-box{padding:35px 20px}h1{font-size:47px}.float{display:none}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <nav class="wrap">
+    <a class="brand" href="#inicio"><span class="brand-mark">⌁</span><span>MONITORAMENTO<small>TCC • ELETRÔNICA</small></span></a>
+    <div class="links">
+      <a href="#projeto">Projeto</a><a href="#componentes">Componentes</a><a href="#comunicacao">Comunicação</a><a href="#interface">Interface</a><a href="#equipe">Equipe</a>
+    </div>
+    <button class="menu" onclick="document.querySelector('.links').classList.toggle('mobile')">☰</button>
+  </nav>
+</header>
+
+<main>
+<section class="hero" id="inicio">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">Projeto de Conclusão de Curso • Eletrônica</div>
+      <h1>Monitoramento<br><span class="gradient">Industrial Preditivo</span></h1>
+      <p>Um protótipo para acompanhar temperatura e vibração de equipamentos, com transmissão sem fio e uma interface de visualização.</p>
+      <div class="buttons"><a class="btn primary" href="#projeto">Conhecer o projeto ↓</a><a class="btn" href="#equipe">Ver equipe</a></div>
+    </div>
+    <div class="visual">
+      <div class="float f1">● SISTEMA ONLINE</div>
+      <div class="device">
+        <div class="screen">
+          <div class="screen-top"><span>MONITORAMENTO INDUSTRIAL</span><span class="live">● LIVE</span></div>
+          <div class="metric">
+            <div class="metric-card"><span>Temperatura</span><strong>31.0 °C</strong></div>
+            <div class="metric-card"><span>Vibração</span><strong>OK</strong></div>
+          </div>
+          <div class="chart">
+            <svg viewBox="0 0 400 100" preserveAspectRatio="none"><polyline points="0,76 35,72 65,77 96,55 125,62 156,42 188,51 220,30 252,46 285,28 320,35 350,18 400,24" fill="none" stroke="#35d6ff" stroke-width="3"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="float f2">ESP32 + ESP-NOW</div>
+    </div>
+  </div>
+</section>
+
+<section id="projeto">
+  <div class="wrap">
+    <div class="section-head"><div class="section-number">01 / CONTEXTO</div><h2>Quando a máquina muda, vale observar.</h2><p class="lead">Temperatura e vibração são variáveis úteis para acompanhar o comportamento de um equipamento.</p></div>
+    <div class="cards">
+      <article class="card"><div class="icon">°C</div><h3>Temperatura</h3><p>Uma elevação fora do padrão pode indicar uma condição que merece inspeção.</p></article>
+      <article class="card"><div class="icon">∿</div><h3>Vibração</h3><p>Mudanças no padrão vibratório podem ajudar a identificar alterações mecânicas.</p></article>
+      <article class="card"><div class="icon">!</div><h3>Observação</h3><p>O monitoramento apoia a observação e não substitui um diagnóstico técnico.</p></article>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head"><div class="section-number">02 / OBJETIVO</div><h2>Medir. Transmitir. Visualizar.</h2><p class="lead">Integrar sensores, microcontroladores e uma interface simples para acompanhamento.</p></div>
+    <div class="cards">
+      <article class="card"><div class="icon">01</div><h3>Medir</h3><p>Captar temperatura e sinais relacionados à vibração.</p></article>
+      <article class="card"><div class="icon">02</div><h3>Transmitir</h3><p>Enviar as leituras entre módulos ESP32 via ESP-NOW.</p></article>
+      <article class="card"><div class="icon">03</div><h3>Visualizar</h3><p>Apresentar informações, histórico e alarmes na tela.</p></article>
+    </div>
+  </div>
+</section>
+
+<section id="componentes">
+  <div class="wrap">
+    <div class="section-head"><div class="section-number">03 / HARDWARE</div><h2>O sistema começa nos sensores.</h2><p class="lead">Arquitetura resumida dos módulos utilizados no protótipo.</p></div>
+    <div class="architecture">
+      <div class="node"><b>DS18B20</b><span>Sensor de temperatura<br>Leitura térmica</span></div>
+      <div class="node"><b>ESP32-WROOM-32</b><span>Aquisição e transmissão</span></div>
+      <div class="node"><b>ESP-NOW</b><span>Comunicação sem fio</span></div>
+      <div class="node"><b>ESP32 CYD</b><span>Recepção e interface</span></div>
+    </div>
+    <div class="spec-grid" style="margin-top:18px">
+      <div class="panel"><div class="spec"><span>Sensor de movimento</span><b>MPU-6050</b></div><div class="spec"><span>Dados</span><b>Temperatura + movimento</b></div></div>
+      <div class="panel"><div class="spec"><span>Interface gráfica</span><b>LovyanGFX</b></div><div class="spec"><span>Funções</span><b>Painel, histórico, vibração, alarmes e informações</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="comunicacao">
+  <div class="wrap">
+    <div class="section-head"><div class="section-number">04 / COMUNICAÇÃO</div><h2>Os módulos conversam diretamente.</h2><p class="lead">A comunicação entre os ESP32 não depende de um roteador Wi-Fi.</p></div>
+    <div class="architecture">
+      <div class="node"><b>SENSORES</b><span>DS18B20 + MPU-6050</span></div>
+      <div class="node"><b>ESP32 TX</b><span>Lê os dados e prepara o envio</span></div>
+      <div class="node"><b>ESP-NOW</b><span>Transmissão sem roteador</span></div>
+      <div class="node"><b>ESP32 CYD</b><span>Recebe e mostra na interface</span></div>
+    </div>
+    <div class="warning"><b>Intervalo configurado no projeto: aproximadamente 300 ms.</b><p>O protótipo utiliza a comunicação direta entre os módulos para transportar as leituras até a interface de visualização.</p></div>
+  </div>
+</section>
+
+<section id="interface">
+  <div class="wrap">
+    <div class="section-head"><div class="section-number">05 / INTERFACE</div><h2>Informação organizada em uma tela.</h2><p class="lead">A interface do ESP32 CYD foi dividida por funções para facilitar a consulta.</p></div>
+    <div class="interface">
+      <div class="panel">
+        <div class="screen-demo">
+          <h3>MONITORAMENTO INDUSTRIAL</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+            <div class="metric-card"><span>Temperatura</span><strong style="font-size:21px">31 °C</strong></div>
+            <div class="metric-card"><span>Vibração</span><strong style="font-size:21px">OK</strong></div>
+          </div>
+          <div class="bar"><i></i></div>
+          <small style="color:#7893a1">Status do monitoramento</small>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="history">
+          <div><b>01 · Painel</b><span>Visão geral das leituras</span></div>
+          <div><b>02 · Histórico</b><span>Consulta das informações</span></div>
+          <div><b>03 · Vibração</b><span>Acompanhamento do sensor</span></div>
+          <div><b>04 · Alarmes</b><span>Avisos conforme configuração</span></div>
+          <div><b>05 · Informações</b><span>Dados gerais do sistema</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head"><div class="section-number">06 / PARÂMETROS</div><h2>Um parâmetro para observar a temperatura.</h2><p class="lead">O protótipo tem um limite crítico configurado de 31 °C.</p></div>
+    <div class="panel" style="display:grid;grid-template-columns:.7fr 1.3fr;gap:30px;align-items:center">
+      <div><div style="font-family:'Space Grotesk';font-size:68px;font-weight:700;color:var(--cyan)">31 °C</div><span style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.12em">Limite crítico configurado</span></div>
+      <div><h3>O que isso significa?</h3><p style="color:var(--muted);margin-top:8px">O valor funciona como parâmetro para a lógica de alerta definida no projeto. Ele não deve ser interpretado como um limite universal para todas as máquinas.</p></div>
+    </div>
+    <div class="warning"><b>Validação</b><p>A precisão e a capacidade de prever falhas precisam ser avaliadas por testes documentados.</p></div>
+  </div>
+</section>
+
+<section id="equipe">
+  <div class="wrap">
+    <div class="section-head"><div class="section-number">07 / EQUIPE</div><h2>Quem desenvolveu o projeto.</h2><p class="lead">Projeto de Conclusão de Curso em Eletrônica.</p></div>
+    <div class="team">
+      <div class="person"><strong>Davi Santos Amorim</strong><span>Integrante</span></div>
+      <div class="person"><strong>Gyan Matheus</strong><span>Integrante</span></div>
+      <div class="person"><strong>Felipe Araujo</strong><span>Integrante</span></div>
+      <div class="person"><strong>Julia Lomeu</strong><span>Integrante</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap"><div class="cta-box">
+    <div class="eyebrow">Encerramento</div>
+    <h2>Uma base para evoluir o monitoramento.</h2>
+    <p>Integração de sensores, comunicação sem fio e interface gráfica em um protótipo embarcado.</p>
+    <a class="btn primary" href="tel:+5517996096607">Entrar em contato • (17) 99609-6607</a>
+  </div></div>
+</section>
+</main>
+
+<footer><div class="wrap foot"><span>Sistema de Monitoramento Industrial Preditivo • TCC / Eletrônica</span><span>Davi Santos Amorim • Gyan Matheus • Felipe Araujo • Julia Lomeu</span></div></footer>
+<script>
+  const links=document.querySelector('.links');
+  document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',()=>links.classList.remove('mobile')));
+</script>
+<style>
+@media(max-width:850px){.links.mobile{display:flex;position:absolute;top:76px;left:12px;right:12px;flex-direction:column;padding:18px;background:#0b1821;border:1px solid var(--line);border-radius:15px;gap:14px}}
+</style>
+</body>
+</html>
